@@ -1,0 +1,84 @@
+apply plugin: 'scala'
+apply plugin: 'java'
+apply plugin: 'maven'
+
+buildscript {
+  repositories {
+    mavenRepo(url: 'http://maven.pd.local/content/repositories/snapshots/')
+  }
+}
+
+apply plugin: "appscanSource"
+
+group 'blackboard.internal.security'
+version '1.0-SNAPSHOT'
+
+sourceSets {
+  main {
+    scala {
+      srcDirs = [ 'src/main' ]
+    }
+    resources {
+      srcDirs = [ 'xml' ]
+    }
+  }
+  test {
+    scala {
+      srcDirs = [ 'src/test/scala' ]
+    }
+  }
+}
+
+repositories {
+  mavenCentral()
+  mavenLocal()
+}
+
+dependencies {
+  compile 'org.scala-lang:scala-library:2.10.3',
+    'org.scalaj:scalaj-time_2.10.2:0.7',
+    'org.mongodb:casbah_2.10:2.6.4',
+    'org.joda:joda-convert:1.5'
+
+  testCompile 'org.scalatest:scalatest_2.10:2.0.RC2',
+    'org.mockito:mockito-core:1.9.5',
+    'junit:junit:4.8.2'
+}
+
+tasks.withType(ScalaCompile) {
+  configure(scalaCompileOptions.forkOptions) {
+      memoryMaximumSize = '1g'
+      jvmArgs = ['-XX:MaxPermSize=512m']
+  }
+}
+
+task run( type : JavaExec, dependsOn : classes ) {
+  main = 'controllers.Execute'
+  classpath sourceSets.main.runtimeClasspath
+  if( project.hasProperty( 'propname' ) )
+  {
+    args = "$propname".split().toList()
+  }
+}
+
+uploadArchives {
+  def nexusUsername = "$System.env.NEXUS_USERNAME".trim()
+  def nexusPassword = "$System.env.NEXUS_PASSWORD".trim()
+
+  if (project.hasProperty("jenkinsMavenUsername")) {
+    nexusUsername = jenkinsMavenUsername
+  }
+
+  if (project.hasProperty("jenkinsMavenPassword")) {
+    nexusPassword = jenkinsMavenPassword
+  }
+  repositories {
+    mavenDeployer {
+      repository( url : "http://maven.pd.local/content/repositories/snapshots" ) {
+        authentication( userName: nexusUsername, password: nexusPassword )
+      }
+    }
+  }
+}
+
+uploadArchives.dependsOn( jar )

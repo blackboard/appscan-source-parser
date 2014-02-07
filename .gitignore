@@ -1,0 +1,15 @@
+#Intellij
+.gradle/
+.idea/
+.git/
+*.iml
+*.iws
+*.ipr
+
+#Scala
+*.class
+*.log
+
+#Other Build Artifacts
+*.jar
+build/
